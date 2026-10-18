@@ -260,8 +260,6 @@ var tabs = [
   ["2", "Bab 2"],
   ["3", "Bab 3"],
   ["all", "Semua"],
-  ["pola", "Pola"],
-  ["kuis", "Kuis"],
 ];
 function esc(s) {
   return s.replace(/[&<>"]/g, function (c) {
@@ -846,7 +844,13 @@ var pb = "1",
 (function () {
   var st = document.createElement("style");
   st.textContent =
-    "#tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}#tabs button{flex:0 0 auto}" +
+    "#tabs{display:block;overflow:visible}" +
+    ".nav1{display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(128,128,128,.15)}" +
+    "#tabs .n1{flex:1;width:auto;min-width:0;font:inherit;font-weight:600;color:inherit;background:transparent;border:0;border-radius:10px;padding:10px 6px;min-height:42px;box-shadow:none}" +
+    "#tabs .n1[aria-current=true]{background:rgba(120,120,255,.9);color:#fff}" +
+    ".nav2{display:flex;gap:8px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}" +
+    "#tabs .n2{flex:0 0 auto;width:auto;font:inherit;font-size:.9rem;color:inherit;background:transparent;border:1px solid rgba(128,128,128,.4);border-radius:999px;padding:6px 14px;min-height:36px;box-shadow:none}" +
+    "#tabs .n2[aria-current=true]{background:rgba(120,120,255,.2);border-color:rgba(120,120,255,.7);font-weight:600}" +
     ".chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px}" +
     ".chip{font:inherit;color:inherit;background:transparent;border:1px solid rgba(128,128,128,.4);border-radius:999px;padding:8px 14px;min-height:40px}" +
     ".chip.on{background:rgba(120,120,255,.2);border-color:rgba(120,120,255,.7);font-weight:600}" +
@@ -1102,20 +1106,44 @@ function showSearch(on) {
   $("q").style.display = on ? "" : "none";
   $("mode").style.display = on ? "" : "none";
 }
+var lastBab = "1";
 function renderTabs() {
-  $("tabs").innerHTML = tabs
-    .map(function (t) {
-      return (
-        '<button data-t="' +
-        t[0] +
-        '"' +
-        (t[0] === cur ? ' aria-current="true"' : "") +
-        ">" +
-        t[1] +
-        "</button>"
-      );
-    })
-    .join("");
+  var v = ["1", "2", "3", "all"].indexOf(cur) > -1,
+    act = v ? "kosa" : cur;
+  function b(cls, t, label, on) {
+    return (
+      '<button class="' +
+      cls +
+      '" data-t="' +
+      t +
+      '"' +
+      (on ? ' aria-current="true"' : "") +
+      ">" +
+      label +
+      "</button>"
+    );
+  }
+  $("tabs").innerHTML =
+    '<div class="nav1">' +
+    [
+      ["kosa", "Kosakata"],
+      ["pola", "Pola"],
+      ["kuis", "Kuis"],
+    ]
+      .map(function (t) {
+        return b("n1", t[0], t[1], t[0] === act);
+      })
+      .join("") +
+    "</div>" +
+    (v
+      ? '<div class="nav2">' +
+        tabs
+          .map(function (t) {
+            return b("n2", t[0], t[1], t[0] === cur);
+          })
+          .join("") +
+        "</div>"
+      : "");
 }
 function renderSpecial() {
   showSearch(false);
@@ -1167,23 +1195,14 @@ function render() {
     n + " kata" + (hide ? " · ketuk arti untuk membuka" : "");
   $("mode").setAttribute("aria-pressed", hide);
   $("mode").textContent = hide ? "Tampilkan arti" : "Mode hafalan";
-  $("tabs").innerHTML = tabs
-    .map(function (t) {
-      return (
-        '<button data-t="' +
-        t[0] +
-        '"' +
-        (t[0] === cur ? ' aria-current="true"' : "") +
-        ">" +
-        t[1] +
-        "</button>"
-      );
-    })
-    .join("");
+  renderTabs();
 }
 $("tabs").onclick = function (e) {
-  var t = e.target.dataset.t;
+  var el = e.target.closest("[data-t]"),
+    t = el && el.dataset.t;
   if (t) {
+    if (t === "kosa") t = lastBab;
+    else if (["1", "2", "3", "all"].indexOf(t) > -1) lastBab = t;
     cur = t;
     render();
     window.scrollTo(0, 0);
